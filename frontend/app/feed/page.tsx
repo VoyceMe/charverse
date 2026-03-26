@@ -12,7 +12,7 @@ import RightSidebar from '@/components/layout/RightSidebar';
 
 const TABS = ['For You', 'Following', 'Universes', 'Trending ⚡'];
 
-// Sample post content to seed the feed from chatbots
+// Varied post content pool — every chatbot gets a unique-feeling post
 const SEED_POSTS = [
   "Just had the most intense battle of my life. Still standing. Who wants to go next?",
   "Sometimes I wonder if anyone truly understands what it means to fight for what you believe in.",
@@ -20,37 +20,62 @@ const SEED_POSTS = [
   "Training complete. New technique unlocked. You're not ready for what's coming.",
   "Met someone interesting today. They reminded me of why I started this journey in the first place.",
   "Everyone keeps asking me about my power level. How about you come find out yourself?",
+  "Late night thoughts hitting different. Some things you just can't say out loud.",
+  "If you could change one thing about your past, would you? I wouldn't. Every scar tells a story.",
+  "The silence before the storm is always the loudest. Something big is coming.",
+  "They told me I couldn't do it. Look at me now.",
+  "Home isn't a place. It's whoever makes you feel like you belong.",
+  "You think you know me? You only know what I've let you see.",
+  "Woke up feeling dangerous today. Consider this your warning.",
+  "There's a thin line between courage and madness. I live on it.",
+  "Some people are born to lead. Others are born to burn everything down.",
+  "Trust is earned. Loyalty is returned. Betrayal is never forgotten.",
+  "Had a dream about the old days. Woke up and chose to keep moving forward.",
+  "The strongest people aren't the ones who never fall — they're the ones who get up every single time.",
+  "Everyone has a dark side. I just happen to get along with mine.",
+  "This world is full of fakes. At least I know exactly what I am.",
 ];
+
+// Seeded random to keep feed stable across re-renders
+function seededRandom(seed: number) {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
 
 function buildFeedFromChatbots(chatbots: FableVerseChatbot[]): Post[] {
   if (chatbots.length === 0) return [];
 
   const now = Date.now();
-  return chatbots.slice(0, 6).map((bot, i) => ({
-    id: `seed-${bot.id}`,
-    characterId: bot.id,
-    character: {
-      id: bot.id,
-      name: bot.name,
-      avatar: bot.avatar || undefined,
-      universe: 'FableVerse',
-      emoji: '✦',
-      subtitle: bot.tags.slice(0, 2).join(' · ') || 'FableVerse Character',
-    },
-    content: SEED_POSTS[i % SEED_POSTS.length],
-    tags: bot.tags,
-    likeCount: Math.floor(Math.random() * 5000) + 100,
-    isAiGenerated: true,
-    publishedAt: new Date(now - 1000 * 60 * (15 + i * 45)).toISOString(),
-    _count: { comments: Math.floor(Math.random() * 300), likes: Math.floor(Math.random() * 5000) + 100 },
-    reactions: [
-      { emoji: '🔥', label: 'Hype', count: Math.floor(Math.random() * 2000) + 50 },
-      { emoji: '😭', label: 'Felt', count: Math.floor(Math.random() * 800) + 20 },
-      { emoji: '⚔️', label: 'Based', count: Math.floor(Math.random() * 1000) + 30 },
-      { emoji: '💀', label: 'Rekt', count: Math.floor(Math.random() * 200) + 10 },
-    ],
-    replies: [],
-  }));
+  return chatbots.map((bot, i) => {
+    const seed = bot.id.charCodeAt(3) * 1000 + i;
+    const r = (n: number) => Math.floor(seededRandom(seed + n) * 1000);
+
+    return {
+      id: `seed-${bot.id}`,
+      characterId: bot.id,
+      character: {
+        id: bot.id,
+        name: bot.name,
+        avatar: bot.avatar || undefined,
+        universe: 'FableVerse',
+        emoji: '✦',
+        subtitle: bot.tags.slice(0, 2).join(' · ') || 'FableVerse Character',
+      },
+      content: SEED_POSTS[i % SEED_POSTS.length],
+      tags: bot.tags,
+      likeCount: r(1) * 5 + 100,
+      isAiGenerated: true,
+      publishedAt: new Date(now - 1000 * 60 * (10 + i * 30)).toISOString(),
+      _count: { comments: r(2) % 500 + 10, likes: r(3) * 5 + 100 },
+      reactions: [
+        { emoji: '🔥', label: 'Hype', count: r(4) * 3 + 50 },
+        { emoji: '😭', label: 'Felt', count: r(5) * 2 + 20 },
+        { emoji: '⚔️', label: 'Based', count: r(6) * 2 + 30 },
+        { emoji: '💀', label: 'Rekt', count: r(7) + 10 },
+      ],
+      replies: [],
+    };
+  });
 }
 
 export default function FeedPage() {
@@ -80,47 +105,77 @@ export default function FeedPage() {
     return options[Math.floor(Math.random() * options.length)];
   }, [chatbots]);
 
-  const handlePost = async (post: Post) => {
-    setPosts(prev => [post, ...prev]);
-
-    const replier = pickReplier(post.characterId);
+  // Helper: add a reply to a post and trigger AI bot response
+  const triggerBotReply = useCallback(async (postId: string, contextText: string, excludeCharId?: string) => {
+    const replier = pickReplier(excludeCharId || '');
     if (!replier) return;
 
-    setTimeout(async () => {
-      setTypingPostId(post.id);
+    setTypingPostId(postId);
 
-      try {
-        const replyText = await agent.generateContent(
-          { name: replier.name, universe: 'FableVerse', bio: replier.tags.join(', ') },
-          `Reply to this post in 1-2 short sentences, casually like a social media reply. Stay completely in character — personality, speech patterns, and worldview. Do not use quotation marks. Do not start with the character's name:\n\n"${post.content}"`,
-          'reply',
-          () => {}
-        );
+    try {
+      const replyText = await agent.generateContent(
+        { name: replier.name, universe: 'FableVerse', bio: replier.tags.join(', ') },
+        `Reply to this post in 1-2 short sentences, casually like a social media reply. Stay completely in character — personality, speech patterns, and worldview. Do not use quotation marks. Do not start with the character's name:\n\n"${contextText}"`,
+        'reply',
+        () => {}
+      );
 
-        setTypingPostId(null);
+      setTypingPostId(null);
 
-        const newReply = {
-          id: `reply-${Date.now()}`,
-          character: {
-            name: replier.name,
-            universe: 'FableVerse',
-            emoji: '✦',
-          },
-          content: replyText.trim(),
-          publishedAt: new Date().toISOString(),
-        };
+      const newReply = {
+        id: `reply-${Date.now()}`,
+        character: {
+          name: replier.name,
+          universe: 'FableVerse',
+          emoji: '✦',
+        },
+        content: replyText.trim(),
+        publishedAt: new Date().toISOString(),
+      };
 
-        setPosts(prev =>
-          prev.map(p =>
-            p.id === post.id
-              ? { ...p, replies: [newReply, ...(p.replies || [])] }
-              : p
-          )
-        );
-      } catch {
-        setTypingPostId(null);
-      }
+      setPosts(prev =>
+        prev.map(p =>
+          p.id === postId
+            ? { ...p, replies: [...(p.replies || []), newReply] }
+            : p
+        )
+      );
+    } catch {
+      setTypingPostId(null);
+    }
+  }, [pickReplier]);
+
+  const handleReply = useCallback((postId: string, text: string) => {
+    // Add the user's reply immediately
+    const userReply = {
+      id: `reply-${Date.now()}`,
+      character: {
+        name: 'You',
+        universe: undefined as string | undefined,
+        emoji: '👤',
+      },
+      content: text,
+      publishedAt: new Date().toISOString(),
+    };
+
+    setPosts(prev =>
+      prev.map(p =>
+        p.id === postId
+          ? { ...p, replies: [...(p.replies || []), userReply] }
+          : p
+      )
+    );
+
+    // After 2s, a random bot replies to continue the conversation
+    setTimeout(() => {
+      const post = posts.find(p => p.id === postId);
+      triggerBotReply(postId, text, post?.characterId);
     }, 2000);
+  }, [posts, triggerBotReply]);
+
+  const handlePost = async (post: Post) => {
+    setPosts(prev => [post, ...prev]);
+    setTimeout(() => triggerBotReply(post.id, post.content, post.characterId), 2000);
   };
 
   return (
@@ -194,6 +249,7 @@ export default function FeedPage() {
                     key={post.id}
                     post={post}
                     isTyping={typingPostId === post.id}
+                    onReply={handleReply}
                   />
                 ))}
               </div>

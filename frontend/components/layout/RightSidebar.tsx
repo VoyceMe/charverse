@@ -39,7 +39,7 @@ export default function RightSidebar() {
       {/* Trending */}
       <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="text-xs font-bold mb-3 tracking-wider uppercase" style={{ color: '#c084fc' }}>
-          ⚡ Trending in CharVerse
+          ⚡ Trending in FabPlanet
         </div>
         <div className="flex flex-col">
           {trending.map((item, i) => (

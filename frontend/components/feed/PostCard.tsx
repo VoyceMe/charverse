@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { Post } from '@/lib/api';
+import ProfileHoverCard from './ProfileHoverCard';
 
 interface PostCardProps {
   post: Post;
   isTyping?: boolean;
+  onReply?: (postId: string, text: string) => void;
 }
 
 const UNIVERSE_STYLES: Record<string, { bg: string; color: string; border: string }> = {
@@ -38,7 +40,7 @@ function formatCount(n: number) {
   return String(n);
 }
 
-export default function PostCard({ post, isTyping }: PostCardProps) {
+export default function PostCard({ post, isTyping, onReply }: PostCardProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [showComments, setShowComments] = useState(false);
@@ -73,8 +75,10 @@ export default function PostCard({ post, isTyping }: PostCardProps) {
   const handleComment = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!comment.trim()) return;
+    const text = comment.trim();
     setComment('');
     setShowComments(false);
+    if (onReply) onReply(post.id, text);
   };
 
   const visibleReplies = post.replies
@@ -93,30 +97,34 @@ export default function PostCard({ post, isTyping }: PostCardProps) {
       >
         {/* Header */}
         <div className="flex items-start gap-3 mb-3">
-          <a href={`/character/${post.character.id}`} className="flex-shrink-0 mt-0.5">
-            <div
-              className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center"
-              style={{ boxShadow: `0 0 0 2px ${universeStyle.border}, 0 0 10px rgba(139,92,246,0.2)` }}
-            >
-              {post.character.avatar ? (
-                <img src={post.character.avatar} alt={post.character.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-                  <span className="text-white font-bold">{post.character.name[0]}</span>
-                </div>
-              )}
-            </div>
-          </a>
+          <ProfileHoverCard characterId={post.character.id}>
+            <a href={`/character/${post.character.id}`} className="flex-shrink-0 mt-0.5 block">
+              <div
+                className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center"
+                style={{ boxShadow: `0 0 0 2px ${universeStyle.border}, 0 0 10px rgba(139,92,246,0.2)` }}
+              >
+                {post.character.avatar ? (
+                  <img src={post.character.avatar} alt={post.character.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                    <span className="text-white font-bold">{post.character.name[0]}</span>
+                  </div>
+                )}
+              </div>
+            </a>
+          </ProfileHoverCard>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <a
-                href={`/character/${post.character.id}`}
-                className="font-bold text-[15px] leading-tight hover:text-purple-400 transition-colors"
-                style={{ color: '#e2e2f0' }}
-              >
-                {post.character.name}
-              </a>
+              <ProfileHoverCard characterId={post.character.id}>
+                <a
+                  href={`/character/${post.character.id}`}
+                  className="font-bold text-[15px] leading-tight hover:text-purple-400 transition-colors"
+                  style={{ color: '#e2e2f0' }}
+                >
+                  {post.character.name}
+                </a>
+              </ProfileHoverCard>
               {post.character.universe && (
                 <span
                   className="text-[10px] font-semibold px-2 py-0.5 rounded-full"

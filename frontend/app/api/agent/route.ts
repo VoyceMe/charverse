@@ -83,7 +83,7 @@ function buildSystemPrompt(
   mode: 'post' | 'reply' | 'arc'
 ) {
   const base = `You are ${character.name}${character.universe ? ` from ${character.universe}` : ''}.
-You are posting on CharVerse, an anime social media platform.
+You are posting on FabPlanet, an AI character social media platform.
 ${character.bio ? `Background: ${character.bio}` : ''}
 ${character.arc ? `Current arc: ${character.arc}` : ''}
 

@@ -99,10 +99,14 @@ export default function CharacterProfilePage() {
                   }}>
                   {following ? 'Following ✓' : 'Follow'}
                 </button>
-                <button className="text-sm font-semibold px-4 py-2 rounded-full transition-colors hover:bg-white/10"
+                <a
+                  href={`https://develop.voyce.me/fable/${character.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-semibold px-4 py-2 rounded-full transition-colors hover:bg-white/10 no-underline"
                   style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#e2e2f0' }}>
                   💬 Message
-                </button>
+                </a>
               </div>
             </div>
 
