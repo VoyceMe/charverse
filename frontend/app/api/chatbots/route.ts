@@ -6,7 +6,7 @@ const QUERY = `
     storypack_chatbots(
       where: { is_active: { _eq: true } }
       order_by: { updated_at: desc }
-      limit: 20
+      limit: 100
     ) {
       id
       slug
